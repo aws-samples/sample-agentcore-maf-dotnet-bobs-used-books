@@ -92,8 +92,15 @@ public sealed class SigV4Handler : DelegatingHandler
     {
         if (!_configureMcpHeaders)
         {
+            var detail = string.Empty;
+            if (!response.IsSuccessStatusCode && response.Content is not null)
+            {
+                var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                detail = $" body={new string(body.Where(c => !char.IsControl(c)).Take(300).ToArray())}";
+            }
+
             Console.WriteLine(
-                $"OTLP_EXPORT endpoint={request.RequestUri!.GetLeftPart(UriPartial.Path)} status={(int)response.StatusCode}");
+                $"OTLP_EXPORT endpoint={request.RequestUri!.GetLeftPart(UriPartial.Path)} status={(int)response.StatusCode}{detail}");
         }
     }
 
