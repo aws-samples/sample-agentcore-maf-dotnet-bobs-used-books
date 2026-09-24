@@ -1,3 +1,6 @@
+# Semgrep dockerfile-source-not-pinned is suppressed on both FROM lines: this sample tracks the
+# rolling .NET 10 tags so rebuilds pick up security patches. Pin by digest if you need reproducible builds.
+# nosemgrep: dockerfile-source-not-pinned
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 # checkov:skip=CKV_DOCKER_2:AgentCore Runtime health-checks the agent through its GET /ping endpoint and does not use Docker HEALTHCHECK; the aspnet base image has no curl or wget to run one.
 WORKDIR /src
@@ -14,6 +17,7 @@ RUN dotnet publish src/BobsBooks.Agent/BobsBooks.Agent.csproj \
     --no-restore \
     --output /app/publish
 
+# nosemgrep: dockerfile-source-not-pinned
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .

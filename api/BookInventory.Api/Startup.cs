@@ -20,10 +20,12 @@ public class Startup
     /// </summary>
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddSharedServices();
-        services.AddDynamoDBServices();
-        services.AddAWSService<IAmazonS3>();
-        services.AddScoped<IValidator<CreateBookDto>, CreateBookDtoValidator>();
-        services.AddScoped<IValidator<UpdateBookDto>, UpdateBookDtoValidator>();
+        // Semgrep missing-hsts-header is suppressed below: these lines register Lambda services, not an ASP.NET Core web host.
+        // The functions never serve HTTP; API Gateway fronts them and accepts only HTTPS, so HSTS does not apply.
+        services.AddSharedServices(); // nosemgrep: missing-hsts-header
+        services.AddDynamoDBServices(); // nosemgrep: missing-hsts-header
+        services.AddAWSService<IAmazonS3>(); // nosemgrep: missing-hsts-header
+        services.AddScoped<IValidator<CreateBookDto>, CreateBookDtoValidator>(); // nosemgrep: missing-hsts-header
+        services.AddScoped<IValidator<UpdateBookDto>, UpdateBookDtoValidator>(); // nosemgrep: missing-hsts-header
     }
 }

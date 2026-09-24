@@ -18,8 +18,10 @@ public class Startup
     /// </summary>
     public void ConfigureServices(IServiceCollection services)
     {
+        // Semgrep missing-hsts-header is suppressed below: these lines register Lambda services, not an ASP.NET Core web host.
+        // The functions never serve HTTP; API Gateway fronts them and accepts only HTTPS, so HSTS does not apply.
         AWSSDKHandler.RegisterXRayForAllServices();
-        services.AddAWSService<IAmazonVerifiedPermissions>();
-        services.AddScoped<ICognitoJwtVerifier, CognitoJwtVerifier>();
+        services.AddAWSService<IAmazonVerifiedPermissions>(); // nosemgrep: missing-hsts-header
+        services.AddScoped<ICognitoJwtVerifier, CognitoJwtVerifier>(); // nosemgrep: missing-hsts-header
     }
 }
