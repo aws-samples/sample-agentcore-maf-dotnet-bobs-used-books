@@ -7,3 +7,5 @@ Modifications:
 3. Declared pageSize and cursor as query parameters on GET /books.
 4. Hardened the read routes with AWS IAM authorization.
 5. Removed the image-validation pipeline from the stack.
+6. Stack-owned Lambda, API access-log, and API Gateway CloudWatch-role resources are deleted
+   with the stack instead of being retained.

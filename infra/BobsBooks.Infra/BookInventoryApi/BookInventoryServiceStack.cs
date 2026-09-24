@@ -369,10 +369,14 @@ public sealed class BookInventoryServiceStack : Stack
                 {
                     RestApiName = $"BookInventoryApi{apiProps.PostFix}",
                     Policy = apiResourcePolicy,
+                    // Remove the API Gateway CloudWatch role (and its account setting resource)
+                    // with the stack; scripts/destroy.sh clears the dangling account setting.
+                    CloudWatchRoleRemovalPolicy = RemovalPolicy.DESTROY,
                     DeployOptions = new StageOptions
                     {
                         AccessLogDestination =
-                            new LogGroupLogDestination(new LogGroup(this, $"BookInventoryLogGroup{apiProps.PostFix}")),
+                            new LogGroupLogDestination(new LogGroup(this, $"BookInventoryLogGroup{apiProps.PostFix}",
+                                new LogGroupProps { RemovalPolicy = RemovalPolicy.DESTROY })),
                         AccessLogFormat = AccessLogFormat.JsonWithStandardFields(),
                         TracingEnabled = true,
                         LoggingLevel = MethodLoggingLevel.INFO

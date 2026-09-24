@@ -37,7 +37,14 @@ public class LambdaFunction : Construct
                 FunctionName = id,
                 Runtime = Runtime.DOTNET_8,
                 MemorySize = props.MemorySize ?? 1024,
-                LogRetention = RetentionDays.ONE_DAY,
+                // An explicit log group (instead of the deprecated LogRetention custom resource)
+                // is owned by the stack, so `cdk destroy` removes it.
+                LogGroup = new LogGroup(this, $"{id}LogGroup", new LogGroupProps
+                {
+                    LogGroupName = $"/aws/lambda/{id}",
+                    Retention = RetentionDays.ONE_DAY,
+                    RemovalPolicy = Amazon.CDK.RemovalPolicy.DESTROY
+                }),
                 Handler = props.Handler,
                 Environment = props.Environment,
                 Tracing = Tracing.ACTIVE,
