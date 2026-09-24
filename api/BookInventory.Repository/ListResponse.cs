@@ -26,7 +26,7 @@ public record ListResponse
         }
         catch (Exception exception)
         {
-            Logger.LogError($"Failure parsing input cursor. Cursor: {cursor} Error Message: {exception.Message}");
+            Logger.LogError("Failure parsing input cursor. Cursor: {Cursor} Error Message: {ErrorMessage}", cursor, exception.Message);
             this.Metadata = new QueryMetadata(); // If cursor is altered, search will start from the beginning. Update this logic as per the use case.
         }
 
@@ -62,7 +62,7 @@ public record QueryMetadata()
     {
         if (queryResponse.LastEvaluatedKey != null && queryResponse.LastEvaluatedKey.ContainsKey("GSI1PK"))
         {
-            Logger.LogInformation($"Adding Partition for the next query: {JsonSerializer.Serialize(queryResponse.LastEvaluatedKey)}");
+            Logger.LogInformation("Adding Partition for the next query: {LastEvaluatedKey}", JsonSerializer.Serialize(queryResponse.LastEvaluatedKey));
 
             this.LastPartition = queryResponse.LastEvaluatedKey["BookId"].S; // for PK
             this.LastGsiPartition = queryResponse.LastEvaluatedKey["GSI1PK"].S;

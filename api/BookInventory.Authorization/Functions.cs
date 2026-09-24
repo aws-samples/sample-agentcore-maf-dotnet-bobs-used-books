@@ -62,7 +62,7 @@ public class Functions
         }
         catch (Exception e)
         {
-            Logger.LogError(e, $"Error occured in Lambda Custom Authorization - Invalid token");
+            Logger.LogError(e, "Error occured in Lambda Custom Authorization - Invalid token");
             return ApiGatewayResponseBuilder.UnauthorizedResponse(e.Message);
         }
         try
@@ -94,12 +94,21 @@ public class Functions
                     ContextMap = GetContextMap(request)
                 }
             };
-            Logger.LogInformation($"Authorization Request for action: {actionId}, resource: {resourceId}, policy store: {policyStoreId}, context: {JsonSerializer.Serialize(authRequest.Context)}");
+            Logger.LogInformation(
+                "Authorization Request for action: {ActionId}, resource: {ResourceId}, policy store: {PolicyStoreId}, context: {Context}",
+                actionId,
+                resourceId,
+                policyStoreId,
+                JsonSerializer.Serialize(authRequest.Context));
             
             // Call Verified Permissions
             var authResponse = await verifiedPermissions.IsAuthorizedWithTokenAsync(authRequest);
 
-            Logger.LogInformation($"Authorization decision for user {cognitoUserName}: {authResponse.Decision} for action {actionId}");
+            Logger.LogInformation(
+                "Authorization decision for user {UserName}: {Decision} for action {ActionId}",
+                cognitoUserName,
+                authResponse.Decision,
+                actionId);
 
             if (authResponse.Decision == Decision.ALLOW)
             {
@@ -110,7 +119,7 @@ public class Functions
         }
         catch (Exception e)
         {
-            Logger.LogError(e, $"Error occured in Lambda Custom Authorization");
+            Logger.LogError(e, "Error occured in Lambda Custom Authorization");
             return ApiGatewayResponseBuilder.UnauthorizedResponse(e.Message);
         }
     }
