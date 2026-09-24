@@ -10,8 +10,5 @@
         public const string LIST_BOOK_API = "ListBook";
         public const string UPDATE_BOOK_API = "UpdateBook";
         public const string UPLOAD_BOOK_IMAGE_API = "GetCoverPageUploadApi";
-        public const string VALIDATE_BOOK_IMAGE_API = "ValidateCoverPage";
-        public const string VALIDATE_IMAGE = "ValidateImage";
-        public const string RESIZE_IMAGE = "ResizeImage";
     }
 }
