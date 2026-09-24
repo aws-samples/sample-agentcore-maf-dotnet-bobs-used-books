@@ -279,3 +279,4 @@ __pycache__/
 *.log
 .venv/
 __pycache__/
+cdk-outputs.json

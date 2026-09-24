@@ -16,7 +16,11 @@ Set `AGENTCORE_GATEWAY_URL` from `cdk-outputs.json`, then run `src/BobsBooks.Gat
 
 ## 4. Run and test the agent
 
-Set `AWS_REGION`, `AGENTCORE_GATEWAY_URL`, and `BEDROCK_MODEL_ID`. Run the agent integration test, then the console project. The test checks that a hardcover-mystery query uses `ListBooks` and returns *The Locked Room Ledger* and *Midnight at Ashcroft*. With no Gateway URL, the live test is reported as skipped.
+Set `AWS_REGION`, `AGENTCORE_GATEWAY_URL`, and `BEDROCK_MODEL_ID`. Run the agent integration test, then the console project. The test checks that a hardcover-mystery query uses `ListBooks` and returns *The Locked Room Ledger* and *Midnight at Ashcroft*. With no Gateway URL, the live test is reported as skipped. With `AGENTCORE_RUNTIME_ARN` set from `cdk-outputs.json`, the console sends its prompt to the agent deployed on AgentCore Runtime.
+
+## 5. Observe the agent
+
+`scripts/enable-transaction-search.sh` enables CloudWatch Transaction Search once per account and Region. The Runtime then exports its OpenTelemetry spans to X-Ray, and they appear in the `aws/spans` log group and under **GenAI Observability** in the CloudWatch console.
 
 ## Least-privilege policies
 
@@ -35,8 +39,8 @@ Gateway's role is limited to:
 
 The API resource policy permits `bedrock-agentcore.amazonaws.com` only when `aws:SourceAccount` is the deploying account and `aws:SourceArn` matches `arn:aws:bedrock-agentcore:<region>:<account>:gateway/bobs-books-gateway*`. Cognito-authorized POST, PUT, and cover-upload routes retain their existing resource-policy statement.
 
-The Runtime role permits: pull from its CDK asset ECR repository; write to its own log group; invoke the `global.anthropic.claude-sonnet-4-6` inference profile and backing foundation model; invoke only the sample Gateway; emit required X-Ray spans; and publish metrics only under the `bedrock-agentcore` namespace. Its trust policy carries matching source-account and source-runtime-ARN conditions.
+The Runtime role permits: pull from its CDK asset ECR repository; write to its own log groups; invoke the `global.anthropic.claude-sonnet-4-6` inference profile and backing foundation model; invoke only the sample Gateway; emit required X-Ray spans; and publish metrics only under the `bedrock-agentcore` namespace. Its trust policy carries matching source-account and source-runtime-ARN conditions.
 
 ## Cleanup
 
-Run `scripts/destroy.sh`. The default table, cover-page bucket, and Runtime log group are retained to prevent accidental data loss; remove them separately only after review.
+Run `scripts/destroy.sh`. It destroys the stacks, deletes the retained table and cover-page bucket (pass `--keep-data` to keep them), removes the API Gateway execution log group and account role setting the sample created, and disables Transaction Search if the sample enabled it.
