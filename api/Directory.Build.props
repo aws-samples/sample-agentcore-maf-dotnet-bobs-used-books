@@ -14,7 +14,6 @@
         <AWSSDKApiGatewayManagementApi>3.7.400.129</AWSSDKApiGatewayManagementApi>
         <AWSSDKCognitoIdentityProvider>3.7.407.24</AWSSDKCognitoIdentityProvider>
         <AWSSDKVerifiedPermissions>3.7.402.43</AWSSDKVerifiedPermissions>
-        <AWSSDKRekognition>3.7.400.129</AWSSDKRekognition>
         <AWSSDKS3>3.7.416.5</AWSSDKS3>
         <AWSSDKExtensionsNETCoreSetup>3.7.400</AWSSDKExtensionsNETCoreSetup>
         <Constructs>10.4.2</Constructs>

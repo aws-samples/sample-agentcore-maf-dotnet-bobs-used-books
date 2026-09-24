@@ -12,7 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>      
-      <PackageReference Include="AWSSDK.Rekognition" Version="$(AWSSDKRekognition)" />
       <PackageReference Include="AWSSDK.S3" Version="$(AWSSDKS3)" />
     </ItemGroup>
 
