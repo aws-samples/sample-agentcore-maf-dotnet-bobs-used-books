@@ -32,7 +32,21 @@ public class Api : RestApi
         return this;
     }
 
-    public Api WithEndpoint(string path, HttpMethod method, Function function, bool authorizeApi = true)
+    /// <param name="authorizationTypeOverride">
+    /// Authorization for a method that does not use the Cognito authorizer (<paramref name="authorizeApi"/> = false).
+    /// Defaults to <see cref="AuthorizationType.NONE"/>; pass <see cref="AuthorizationType.IAM"/> to require SigV4.
+    /// </param>
+    /// <param name="requestParameters">
+    /// Method request parameters to declare, e.g. <c>method.request.querystring.pageSize</c> = false (optional).
+    /// Declared parameters appear in the exported OpenAPI schema, which AgentCore Gateway turns into tool inputs.
+    /// </param>
+    public Api WithEndpoint(
+        string path,
+        HttpMethod method,
+        Function function,
+        bool authorizeApi = true,
+        AuthorizationType? authorizationTypeOverride = null,
+        IDictionary<string, bool>? requestParameters = null)
     {
         IResource? lastResource = null;
 
@@ -68,8 +82,11 @@ public class Api : RestApi
                     new MethodResponse { StatusCode = "400" },
                     new MethodResponse { StatusCode = "500" }
                 },
-                AuthorizationType = authorizeApi ? AuthorizationType.CUSTOM : AuthorizationType.NONE,
-                Authorizer = authorizeApi ? this.Authorizer : null
+                AuthorizationType = authorizeApi
+                    ? AuthorizationType.CUSTOM
+                    : authorizationTypeOverride ?? AuthorizationType.NONE,
+                Authorizer = authorizeApi ? this.Authorizer : null,
+                RequestParameters = requestParameters
             });
 
         return this;

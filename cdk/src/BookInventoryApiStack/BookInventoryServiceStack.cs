@@ -316,12 +316,58 @@ public sealed class BookInventoryServiceStack : Stack
         }));
 
         //Api
+        // AgentCore integration (fork change). When the Gateway ARN is supplied as CDK context
+        // (-c agentCoreGatewayArn=arn:aws:bedrock-agentcore:<region>:<account>:gateway/<id>), the two read
+        // routes require SigV4 and a resource policy lets only that Gateway invoke them.
+        // Without the context value the read routes stay open, exactly as upstream.
+        var agentCoreGatewayArn = this.Node.TryGetContext("agentCoreGatewayArn") as string;
+        var hardenReadRoutes = !string.IsNullOrWhiteSpace(agentCoreGatewayArn);
+        var readRouteAuthorization = hardenReadRoutes ? AuthorizationType.IAM : AuthorizationType.NONE;
+
+        PolicyDocument? apiResourcePolicy = null;
+        if (hardenReadRoutes)
+        {
+            apiResourcePolicy = new PolicyDocument(new PolicyDocumentProps
+            {
+                Statements =
+                [
+                    new PolicyStatement(new PolicyStatementProps
+                    {
+                        Sid = "AllowAgentCoreGatewayReadRoutes",
+                        Effect = Effect.ALLOW,
+                        Principals = [new ServicePrincipal("bedrock-agentcore.amazonaws.com")],
+                        Actions = ["execute-api:Invoke"],
+                        Resources = ["execute-api:/*/GET/books", "execute-api:/*/GET/books/*"],
+                        Conditions = new Dictionary<string, object>
+                        {
+                            { "ArnEquals", new Dictionary<string, object> { { "aws:SourceArn", agentCoreGatewayArn! } } }
+                        }
+                    }),
+                    // Keep the Cognito-authorized write and upload routes reachable as before.
+                    new PolicyStatement(new PolicyStatementProps
+                    {
+                        Sid = "AllowAuthorizerProtectedRoutes",
+                        Effect = Effect.ALLOW,
+                        Principals = [new AnyPrincipal()],
+                        Actions = ["execute-api:Invoke"],
+                        Resources =
+                        [
+                            "execute-api:/*/POST/books",
+                            "execute-api:/*/PUT/books/*",
+                            "execute-api:/*/GET/books/*/*"
+                        ]
+                    })
+                ]
+            });
+        }
+
         var api = new SharedConstructs.Api(
                 this,
                 $"BookInventoryApi{apiProps.PostFix}",
                 new RestApiProps
                 {
                     RestApiName = $"BookInventoryApi{apiProps.PostFix}",
+                    Policy = apiResourcePolicy,
                     DeployOptions = new StageOptions
                     {
                         AccessLogDestination =
@@ -340,7 +386,8 @@ public sealed class BookInventoryServiceStack : Stack
                 "/books/{id}",
                 HttpMethod.Get,
                 getBookApi.Function,
-                false) // Get Book by id, no auth
+                false,
+                readRouteAuthorization) // Get Book by id: open upstream, SigV4 + Gateway-only when hardened
             .WithEndpoint(
                 "/books",
                 HttpMethod.Post,
@@ -349,7 +396,14 @@ public sealed class BookInventoryServiceStack : Stack
                 "/books",
                 HttpMethod.Get,
                 listBooks.Function,
-                false) // List books, no auth
+                false,
+                readRouteAuthorization,
+                new Dictionary<string, bool>
+                {
+                    // Declared so the exported schema (and the Gateway ListBooks tool) exposes paging inputs.
+                    { "method.request.querystring.pageSize", false },
+                    { "method.request.querystring.cursor", false }
+                }) // List books: open upstream, SigV4 + Gateway-only when hardened
             .WithEndpoint(
                 "/books/{id}",
                 HttpMethod.Put,
@@ -374,6 +428,15 @@ public sealed class BookInventoryServiceStack : Stack
                 Value = api.Url,
                 ExportName = $"{servicePrefix}-ApiEndpoint{apiProps.PostFix}",
                 Description = "Endpoint of the Book Inventory API"
+            });
+
+        _ = new CfnOutput(
+            this,
+            $"{servicePrefix}-RestApiIdOutput{apiProps.PostFix}",
+            new CfnOutputProps
+            {
+                Value = api.RestApiId,
+                Description = "REST API ID, used as the AgentCore Gateway API Gateway target"
             });
     }
 }

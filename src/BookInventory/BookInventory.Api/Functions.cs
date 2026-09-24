@@ -58,7 +58,8 @@ public class Functions
     [Logging(ClearState = true)]
     public async Task<APIGatewayProxyResponse> ListBooks([FromQuery] int pageSize = 10, [FromQuery] string cursor = null)
     {
-        cursor.AddObservabilityTag("ListBooks");
+        // X-Ray rejects a null annotation value, so a first-page request (no cursor) used to fail with 502.
+        (cursor ?? string.Empty).AddObservabilityTag("ListBooks");
         try
         {
             var response = await this.bookInventoryService.ListAllBooksAsync(
