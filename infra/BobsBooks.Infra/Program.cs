@@ -3,7 +3,16 @@ using AuthenticationStack;
 using BobsBooks.Infra;
 using BookInventoryApiStack;
 
-var app = new App();
+// CI sets CDK_SKIP_BUNDLING=true to synthesize templates without packaging the .NET Lambda
+// functions in Docker. Deployments always bundle.
+var skipBundling = string.Equals(
+    System.Environment.GetEnvironmentVariable("CDK_SKIP_BUNDLING"), "true", StringComparison.OrdinalIgnoreCase);
+var app = new App(skipBundling
+    ? new AppProps
+    {
+        PostCliContext = new Dictionary<string, object> { ["aws:cdk:bundling-stacks"] = Array.Empty<string>() }
+    }
+    : null);
 var postfix = System.Environment.GetEnvironmentVariable("STACK_POSTFIX") ?? string.Empty;
 var environment = new Amazon.CDK.Environment
 {
