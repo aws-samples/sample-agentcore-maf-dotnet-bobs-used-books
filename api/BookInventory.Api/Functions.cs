@@ -76,7 +76,7 @@ public class Functions
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error occured while searching books for criteria {Cursor}", cursor);
+            Logger.LogError(ex, "Error occured while searching books for criteria {Cursor}", args: [cursor]);
             return ApiGatewayResponseBuilder.Build(HttpStatusCode.InternalServerError, $"Error occured while searching books for criteria {cursor}");
         }
     }
@@ -87,7 +87,7 @@ public class Functions
     [Logging(ClearState = true, LogEvent = true)]
     public async Task<APIGatewayProxyResponse> GetBook(string id)
     {
-        Logger.LogInformation("Book search for id {BookId}", id);
+        Logger.LogInformation("Book search for id {BookId}", args: [id]);
         if (string.IsNullOrWhiteSpace(id))
         {
             return ApiGatewayResponseBuilder.Build(HttpStatusCode.BadRequest, "Id cannot be null");

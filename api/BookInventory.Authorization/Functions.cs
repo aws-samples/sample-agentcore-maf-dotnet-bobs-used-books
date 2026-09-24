@@ -96,19 +96,14 @@ public class Functions
             };
             Logger.LogInformation(
                 "Authorization Request for action: {ActionId}, resource: {ResourceId}, policy store: {PolicyStoreId}, context: {Context}",
-                actionId,
-                resourceId,
-                policyStoreId,
-                JsonSerializer.Serialize(authRequest.Context));
+                args: [actionId, resourceId, policyStoreId, JsonSerializer.Serialize(authRequest.Context)]);
             
             // Call Verified Permissions
             var authResponse = await verifiedPermissions.IsAuthorizedWithTokenAsync(authRequest);
 
             Logger.LogInformation(
                 "Authorization decision for user {UserName}: {Decision} for action {ActionId}",
-                cognitoUserName,
-                authResponse.Decision,
-                actionId);
+                args: [cognitoUserName, authResponse.Decision, actionId]);
 
             if (authResponse.Decision == Decision.ALLOW)
             {
