@@ -31,14 +31,6 @@ internal sealed class AgentRuntimeStack : Stack
             File = "src/BobsBooks.Agent/Dockerfile",
             Platform = Platform_.LINUX_ARM64
         });
-        var logGroup = new LogGroup(this, "RuntimeLogGroup", new LogGroupProps
-        {
-            LogGroupName = $"/aws/bedrock-agentcore/runtimes/{runtimeName}-DEFAULT",
-            Retention = RetentionDays.ONE_WEEK,
-            // DESTROY so a failed first deploy or `destroy.sh` does not leave a fixed-name
-            // log group behind that blocks the next deploy.
-            RemovalPolicy = RemovalPolicy.DESTROY
-        });
         var runtimeArnPattern = FormatArn(new ArnComponents
         {
             Service = "bedrock-agentcore",
@@ -66,7 +58,6 @@ internal sealed class AgentRuntimeStack : Stack
             Description = "Least-privilege execution role for the Bob's Books agent"
         });
         image.Repository.GrantPull(role);
-        logGroup.GrantWrite(role);
         // AgentCore writes the container's stdout to /aws/bedrock-agentcore/runtimes/<runtime-id>-DEFAULT.
         // The runtime ID is assigned at creation, so grant this runtime name's log groups;
         // the log group itself is created below, after the Runtime, so the stack owns it.
@@ -157,8 +148,10 @@ internal sealed class AgentRuntimeStack : Stack
                 ["OTEL_DIAGNOSTIC_SPANS"] = "false",
                 ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http/protobuf",
                 ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = $"https://xray.{Region}.{UrlSuffix}/v1/traces",
-                ["OTEL_EXPORTER_OTLP_TRACES_HEADERS"] =
-                    $"x-aws-log-group={logGroup.LogGroupName},x-aws-log-stream=spans,x-aws-metric-namespace=bedrock-agentcore",
+                // Spans go to the Transaction Search log group (aws/spans). Do not add
+                // x-aws-log-group here: X-Ray would then write spans to that log group and
+                // reject every export unless a Logs resource policy allows it.
+                ["OTEL_EXPORTER_OTLP_TRACES_HEADERS"] = "x-aws-metric-namespace=bedrock-agentcore",
                 ["OTEL_SERVICE_NAME"] = $"{runtimeName}.DEFAULT"
             }
         });
