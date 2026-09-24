@@ -35,7 +35,9 @@ internal sealed class AgentRuntimeStack : Stack
         {
             LogGroupName = $"/aws/bedrock-agentcore/runtimes/{runtimeName}-DEFAULT",
             Retention = RetentionDays.ONE_WEEK,
-            RemovalPolicy = RemovalPolicy.RETAIN
+            // DESTROY so a failed first deploy or `destroy.sh` does not leave a fixed-name
+            // log group behind that blocks the next deploy.
+            RemovalPolicy = RemovalPolicy.DESTROY
         });
         var runtimeArnPattern = FormatArn(new ArnComponents
         {
