@@ -1,0 +1,9 @@
+This project is a fork of https://github.com/aws-samples/bobs-used-bookstore-serverless
+at commit 60705cc29dd8c4721a33348d047331fc8f38fb9a, licensed under MIT-0.
+
+Modifications:
+1. Fixed ListBooks passing a null cursor into an X-Ray annotation, which returned HTTP 502.
+2. Defaulted an omitted pageSize instead of passing DynamoDB Limit=0, which returned HTTP 500.
+3. Declared pageSize and cursor as query parameters on GET /books.
+4. Hardened the read routes with AWS IAM authorization.
+5. Removed the image-validation pipeline from the stack.
