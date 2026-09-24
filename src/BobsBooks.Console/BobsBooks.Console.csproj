@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="AWSSDK.BedrockAgentCore" />
     <PackageReference Include="AWSSDK.Extensions.Bedrock.MEAI" />
     <PackageReference Include="Microsoft.Agents.AI" />
     <PackageReference Include="ModelContextProtocol" />
