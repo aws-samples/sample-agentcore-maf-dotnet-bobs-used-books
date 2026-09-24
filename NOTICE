@@ -9,3 +9,4 @@ Modifications:
 5. Removed the image-validation pipeline from the stack.
 6. Stack-owned Lambda, API access-log, and API Gateway CloudWatch-role resources are deleted
    with the stack instead of being retained.
+7. Upgraded the API projects and Lambda functions from .NET 8 to .NET 10 (dotnet10 runtime).

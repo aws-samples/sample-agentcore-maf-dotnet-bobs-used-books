@@ -35,7 +35,7 @@ public class LambdaFunction : Construct
             new DotNetFunctionProps()
             {
                 FunctionName = id,
-                Runtime = Runtime.DOTNET_8,
+                Runtime = Runtime.DOTNET_10,
                 MemorySize = props.MemorySize ?? 1024,
                 // An explicit log group (instead of the deprecated LogRetention custom resource)
                 // is owned by the stack, so `cdk destroy` removes it.
@@ -52,6 +52,8 @@ public class LambdaFunction : Construct
                 SolutionDir = "./api",
                 Bundling = new BundlingOptions
                 {
+                    // The construct's default build image only has the .NET 8 SDK.
+                    DockerImage = Amazon.CDK.DockerImage.FromRegistry("public.ecr.aws/sam/build-dotnet10"),
                     CommandHooks = new CleanupGeneratedTemplates()
                 },
                 Architecture =

@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <AmazonLambdaCore>2.5.1</AmazonLambdaCore>
         <AmazonLambdaSerializationSystemTextJson>2.4.4</AmazonLambdaSerializationSystemTextJson>
         <AmazonCDKAWSLambdaDotNet>0.0.6</AmazonCDKAWSLambdaDotNet>

@@ -4,7 +4,7 @@ This repository is the companion sample for a five-part series that adds a Micro
 
 ## Architecture
 
-A local console or application invokes the .NET agent. The agent uses an Amazon Bedrock model and discovers `ListBooks` and `GetBook` through an IAM-authorized AgentCore Gateway. Gateway assumes a least-privilege role to call only `GET /books` and `GET /books/{id}` on API Gateway. The API runs .NET 8 Lambda functions and stores inventory in DynamoDB. The Runtime exports signed OpenTelemetry traces to AWS X-Ray and CloudWatch.
+A local console or application invokes the .NET agent. The agent uses an Amazon Bedrock model and discovers `ListBooks` and `GetBook` through an IAM-authorized AgentCore Gateway. Gateway assumes a least-privilege role to call only `GET /books` and `GET /books/{id}` on API Gateway. The API runs .NET 10 Lambda functions and stores inventory in DynamoDB. The Runtime exports signed OpenTelemetry traces to AWS X-Ray and CloudWatch.
 
 ## Series
 
