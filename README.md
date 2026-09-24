@@ -62,6 +62,7 @@ Agent spans appear within about 10 minutes in the CloudWatch console under **Gen
 ## Cleanup
 
 ```bash
+export AWS_REGION=us-east-1
 ./scripts/destroy.sh
 ```
 
