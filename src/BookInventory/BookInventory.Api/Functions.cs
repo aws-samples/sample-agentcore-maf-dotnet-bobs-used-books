@@ -60,6 +60,11 @@ public class Functions
     {
         // X-Ray rejects a null annotation value, so a first-page request (no cursor) used to fail with 502.
         (cursor ?? string.Empty).AddObservabilityTag("ListBooks");
+        // The generated handler passes 0, not the C# default, when pageSize is omitted; DynamoDB rejects Limit=0.
+        if (pageSize <= 0)
+        {
+            pageSize = 10;
+        }
         try
         {
             var response = await this.bookInventoryService.ListAllBooksAsync(

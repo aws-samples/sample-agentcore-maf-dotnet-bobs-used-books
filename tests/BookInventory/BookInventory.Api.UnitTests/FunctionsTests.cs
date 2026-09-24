@@ -32,6 +32,23 @@ public class FunctionsTests
         this.sut = new Functions(this.bookInventoryService, this.createBookValidator, this.updateBookValidator, s3Client);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task ListBooks_WhenPageSizeIsMissing_ShouldQueryDefaultPageSize(int pageSize)
+    {
+        // Arrange: the generated handler passes 0 when the pageSize query parameter is omitted
+        A.CallTo(() => this.bookInventoryService.ListAllBooksAsync(10, null))
+            .Returns(new BookQueryResponse([], null!));
+
+        // Act
+        var response = await this.sut.ListBooks(pageSize, null!);
+
+        // Assert
+        response.StatusCode.Should().Be((int)HttpStatusCode.OK);
+        A.CallTo(() => this.bookInventoryService.ListAllBooksAsync(10, null)).MustHaveHappenedOnceExactly();
+    }
+
     [Fact]
     public async Task GetBook_WhenRequestIsValid_ShouldRespondSearchResult()
     {
