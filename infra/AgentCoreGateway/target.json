@@ -10,13 +10,13 @@
       "path": "/books",
       "method": "GET",
       "name": "ListBooks",
-      "description": "List books for sale in Bob's Used Books. Returns title, author, condition (Hardcover/Paperback), genre and price for each book. Call this first when the user asks what is available or wants recommendations."
+      "description": "List a page of inventory: title, author, book type, condition, genre, price, and quantity. Use this to find available books. Omit cursor for the first page; use the returned cursor for another page."
     },
     {
       "path": "/books/{id}",
       "method": "GET",
       "name": "GetBook",
-      "description": "Get one book by its id, including title, author, condition, genre, price and quantity. Use the id from ListBooks."
+      "description": "Get a book by its id, including format, condition, price, and availability. Use a book identifier returned by ListBooks."
     }
   ]
 }
