@@ -22,7 +22,6 @@
         <FluentValidationDependencyInjectionExtensions>11.8.1</FluentValidationDependencyInjectionExtensions>
         <MicrosoftNETTestSdk>17.13.0</MicrosoftNETTestSdk>
         <MicrosoftIdentityModelProtocolsOpenIdConnect>8.7.0</MicrosoftIdentityModelProtocolsOpenIdConnect>
-        <MagickNETQ8AnyCPU>14.6.0</MagickNETQ8AnyCPU>
         <CoverletCollector>6.0.4</CoverletCollector>
         <JsonWebToken>1.9.4</JsonWebToken>
         <Xunit>2.9.0</Xunit>
