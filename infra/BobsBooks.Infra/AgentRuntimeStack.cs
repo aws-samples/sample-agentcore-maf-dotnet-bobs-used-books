@@ -144,6 +144,9 @@ internal sealed class AgentRuntimeStack : Stack
                 ["OTEL_SERVICE_NAME"] = $"{runtimeName}.DEFAULT"
             }
         });
+        // AgentCore validates ECR pull access when the Runtime is created, so the role's
+        // default policy (which carries the ECR grants) must exist first.
+        runtime.Node.AddDependency(role);
 
         _ = new CfnOutput(this, "RuntimeArn", new CfnOutputProps
         {
