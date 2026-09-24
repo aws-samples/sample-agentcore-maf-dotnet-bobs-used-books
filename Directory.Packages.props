@@ -1,0 +1,27 @@
+<Project>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'BobsBooks.Agent' Or '$(MSBuildProjectName)' == 'BobsBooks.Shared' Or '$(MSBuildProjectName)' == 'BobsBooks.Console' Or '$(MSBuildProjectName)' == 'BobsBooks.AppHost' Or '$(MSBuildProjectName)' == 'BobsBooks.GatewayProbe' Or '$(MSBuildProjectName)' == 'BobsBooks.Agent.Tests' Or '$(MSBuildProjectName)' == 'BobsBooks.Infra'">
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
+    <PackageVersion Include="Amazon.CDK.AWS.Lambda.DotNet" Version="0.0.6" />
+    <PackageVersion Include="Amazon.CDK.Lib" Version="2.262.0" />
+    <PackageVersion Include="Amazon.Lambda.APIGatewayEvents" Version="2.7.1" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.5.4" />
+    <PackageVersion Include="Aspire.Hosting.AWS" Version="13.7.2" />
+    <PackageVersion Include="AWS.AgentCore.Hosting" Version="1.1.1" />
+    <PackageVersion Include="AWS.AgentCore.Testing" Version="1.0.1" />
+    <PackageVersion Include="AWSSDK.CognitoIdentityProvider" Version="3.7.407.24" />
+    <PackageVersion Include="AWSSDK.Core" Version="4.0.101" />
+    <PackageVersion Include="AWSSDK.Extensions.Bedrock.MEAI" Version="4.0.101.8" />
+    <PackageVersion Include="Constructs" Version="10.5.0" />
+    <PackageVersion Include="Microsoft.Agents.AI" Version="1.22.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+</Project>

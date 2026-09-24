@@ -1,0 +1,13 @@
+.git
+.gitlab-ci.yml
+cdk.out
+**/bin
+**/obj
+**/*.log
+.venv
+__pycache__
+docs
+api
+infra
+scripts
+tests
