@@ -67,6 +67,22 @@ internal sealed class AgentRuntimeStack : Stack
         });
         image.Repository.GrantPull(role);
         logGroup.GrantWrite(role);
+        // AgentCore writes the container's stdout to /aws/bedrock-agentcore/runtimes/<runtime-id>-DEFAULT.
+        // The runtime ID is assigned at creation, so grant this runtime name's log groups;
+        // the log group itself is created below, after the Runtime, so the stack owns it.
+        var runtimeLogGroupPattern = FormatArn(new ArnComponents
+        {
+            Service = "logs",
+            Resource = "log-group",
+            ResourceName = $"/aws/bedrock-agentcore/runtimes/{runtimeName}-*",
+            ArnFormat = ArnFormat.COLON_RESOURCE_NAME
+        });
+        role.AddToPolicy(new PolicyStatement(new PolicyStatementProps
+        {
+            Sid = "WriteRuntimeLogs",
+            Actions = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"],
+            Resources = [runtimeLogGroupPattern, $"{runtimeLogGroupPattern}:log-stream:*"]
+        }));
         role.AddToPolicy(new PolicyStatement(new PolicyStatementProps
         {
             Sid = "InvokeAgentModel",
@@ -149,6 +165,13 @@ internal sealed class AgentRuntimeStack : Stack
         // AgentCore validates ECR pull access when the Runtime is created, so the role's
         // default policy (which carries the ECR grants) must exist first.
         runtime.Node.AddDependency(role);
+
+        _ = new LogGroup(this, "RuntimeApplicationLogGroup", new LogGroupProps
+        {
+            LogGroupName = Fn.Join("", ["/aws/bedrock-agentcore/runtimes/", runtime.AttrAgentRuntimeId, "-DEFAULT"]),
+            Retention = RetentionDays.ONE_WEEK,
+            RemovalPolicy = RemovalPolicy.DESTROY
+        });
 
         _ = new CfnOutput(this, "RuntimeArn", new CfnOutputProps
         {
