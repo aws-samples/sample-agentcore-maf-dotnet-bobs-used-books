@@ -1,0 +1,22 @@
+{
+  "name": "bobs-books-api",
+  "description": "Two read-only tools for Bob's Used Books",
+  "toolFilters": [
+    { "filterPath": "/books", "methods": ["GET"] },
+    { "filterPath": "/books/{id}", "methods": ["GET"] }
+  ],
+  "toolOverrides": [
+    {
+      "path": "/books",
+      "method": "GET",
+      "name": "ListBooks",
+      "description": "List books for sale in Bob's Used Books. Returns title, author, condition (Hardcover/Paperback), genre and price for each book. Call this first when the user asks what is available or wants recommendations."
+    },
+    {
+      "path": "/books/{id}",
+      "method": "GET",
+      "name": "GetBook",
+      "description": "Get one book by its id, including title, author, condition, genre, price and quantity. Use the id from ListBooks."
+    }
+  ]
+}

@@ -1,196 +1,81 @@
-## Bob's Used BookStore Serverless
-Bob's Used BookStore serverless is a serverless version of the [Bob's Used Books Sample Application](https://github.com/aws-samples/bobs-used-bookstore-sample).
-This sample application is to demonstrate modernizing dotnet API by leveraging the serverless framework with [AWS Cloud Development Kit (CDK)](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html).
+# Bob's Used Books with .NET and Amazon Bedrock AgentCore
 
-## Overview 
-In this dotnet modernization sample, microservices are identified as the first step. BookInventory is the one of the microservices implemented with Amazon Cognito integration.
+This repository is the companion sample for a five-part series that adds a Microsoft Agent Framework assistant to the existing Bob's Used Books serverless API. The sample preserves the API as the business boundary, exposes two read-only operations as Model Context Protocol (MCP) tools through Amazon Bedrock AgentCore Gateway, and hosts the .NET 10 agent on AgentCore Runtime.
 
-### BookInventory Architecture
+## Architecture
 
-The BookInventory microservice utilizes various serverless services from AWS, including AWS Lambda, Amazon API Gateway, Amazon DynamoDB, Amazon S3 buckets, and Step Functions. Amazon Cognito is integrated with the API Gateway using a Custom Lambda authorizer to verify if the requester has the necessary roles to access the endpoint.
+A local console or application invokes the .NET agent. The agent uses an Amazon Bedrock model and discovers `ListBooks` and `GetBook` through an IAM-authorized AgentCore Gateway. Gateway assumes a least-privilege role to call only `GET /books` and `GET /books/{id}` on API Gateway. The API runs .NET 8 Lambda functions and stores inventory in DynamoDB. The Runtime exports signed OpenTelemetry traces to AWS X-Ray and CloudWatch.
 
-![img.png](img.png)
+## Series
 
-- **AWS Lambda** - Lambda functions are built with [Lambda Annotation Framework](https://aws.amazon.com/blogs/developer/net-lambda-annotations-framework/) and [Lambda power tools](https://docs.powertools.aws.dev/lambda/dotnet/). Implemented Lambda functions demonstrates patterns to use CloudWatch for logging, XRay for Tracing and Custom metrics. Lambda function interacts with Amazon DynamoDB for storing data.
-    - **ListBook and SearchBook** APIs can be used by Admin, Customer and by anonymous users.
-    - **Add Book** API is restricted to only authorized users. Lambda authorizer checks if the requester has "Customer" role.
-    - **Update Book** API is restricted to only authorized users. Lambda authorizer checks if the requester has "Customer" or "Admin" role.
-    - **Cover page Image Upload** API generates presigned URLs to upload cover page image to Amazon S3 bucket. Only "Customer" role is allowed to upload image. Uploaded images for book are stored under book id folder in the bucket for easy access.
-
-- **S3 Event Notification** triggers image validation process asynchronously as soon as the image is uploaded to S3 bucket.
-- **Step Function and EventBridge Rules** filters are applied to send only new object creation events for images (.jpg and .png) to trigger step function to validate image. Step function checks if the image does not have violent or sexual content using Amazon Rekognition Service.  If the image is safe, another Lambda function resizes it. Otherwise, the image remains in the S3 bucket for manual review. Additionally, this process can be enhanced to include notifications or move the image to a different bucket based on specific requirements
-- **Amazon S3**
-    - **Publish Image bucket** is used to store all the validated and resized images that can be used in the frontend application. After the images are published to this bucket, the original images are typically deleted from the source location. This helps optimize storage and reduce costs. CloudFront is used to expose the published images from the S3 bucket to the frontend application.
-- **Amazon DynamoDB** table is used to store BookInventory microservice data.
-- **Amazon Verified Permissions** configure authorization policies helps to isolate authorization from application code. 
-
+| Post | Git tag | Docs page |
+|---|---|---|
+| Part 1 — Gateway and Runtime | `part-1` | [Part 1 walkthrough](docs/part-1.md) |
+| Part 2 — Identity | `part-2` | Planned |
+| Part 3 — Policy | `part-3` | Planned |
+| Part 4 — Observability and evaluations | `part-4` | Planned |
+| Part 5 — Runtime V2 and native AOT | `part-5` | Planned |
 
 ## Prerequisites
-To build the application you need the following:
-* The [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-* A modern IDE, for example [Visual Studio Code](https://code.visualstudio.com/) or [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) or [JetBrains Rider](https://www.jetbrains.com/rider/)
 
-To deploy the application to AWS you need the following:
-* An AWS IAM User with an attached _AdministratorAccess_ policy. AdministratorAccess is only recommended for sample application. It is recommended to grant only required policies. 
-* The [AWS Cloud Development Kit (CDK)](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
-* [Bootstrap](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) your AWS environment for the AWS CDK by executing `cdk bootstrap` in a terminal window
+- .NET 10 SDK
+- Docker with Linux Arm64 build support
+- Node.js 20 or later
+- AWS CDK v2
+- AWS CLI v2 configured with temporary, least-privilege credentials
+- An AWS account and Region where Amazon Bedrock AgentCore and the selected model are available
 
-## Getting started
-1. AuthenticationStack - Authentication Stack configures Cognito user pool "book-store-users". It will also create user groups "Admin" and "Customer".
-2. BookInventoryServiceStack - BookInventoryServiceStack deploys Api gateway with Lambda functions and DynamoDB as the data store. Cognito user pool created in "AuthenticationStack" is used for authentication and authorization in API Gateway.
+Do not attach `AdministratorAccess`. Use temporary credentials limited to creating and operating the resources in this sample, and review the synthesized IAM policies before deployment.
 
-## Deployment
-Bookstore application can be deployed to AWS via the CDK's command-line tooling. BookInventoryServiceStack depends on the resources created by AuthenticationStack. 
+## Quickstart
 
-```
-cdk deploy AuthenticationStack --require-approval=never --app "dotnet run --project cdk/src/AuthenticationStack/AuthenticationStack.csproj"
-```
-```
-cdk deploy BookInventoryServiceStack --require-approval=never --app "dotnet run --project cdk/src/BookInventoryApiStack/BookInventoryApiStack.csproj"
-```
-## Postfix Environment
-When a team of developers developing an Application, may want to test the feature/change in an isolated 
-environment without impacting the work of other developers. In such cases, a developer can create an isolated testing environment, which will create all the necessary resources with a specific postfix (suffix). This allows the developer to test their changes in an isolated environment. After successful testing, the code can be merged into the main or development branch. The isolated testing environment can be destroyed after the testing is complete.
+Run these commands in order from the repository root:
 
-Keep the postfix in two or 3 chars to make it simple to identify the resources. Example, -ab will suffix -ab in all the resources. 
+```bash
+export PATH="$HOME/.dotnet:$PATH"
+export DOTNET_ROLL_FORWARD=Major
+export AWS_REGION=us-east-1
+export CDK_DEFAULT_REGION="$AWS_REGION"
+export CDK_DEFAULT_ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
 
-### Bash
-```
-export STACK_POSTFIX="<<-simple-suffix-value>>"
-cdk deploy $"AuthenticationStack{STACK_POSTFIX}" --require-approval=never --app "dotnet run --project cdk/src/AuthenticationStack/AuthenticationStack.csproj"
-cdk deploy $"BookInventoryServiceStack{STACK_POSTFIX}" --require-approval=never --app "dotnet run --project cdk/src/BookInventoryApiStack/BookInventoryApiStack.csproj"
-```
-### Windows
-```
-$Env:STACK_POSTFIX="<<-simple-suffix-value>>"
-cdk deploy AuthenticationStack$Env:STACK_POSTFIX --require-approval=never --app "dotnet run --project cdk/src/AuthenticationStack/AuthenticationStack.csproj"
-cdk deploy BookInventoryServiceStack$Env:STACK_POSTFIX --require-approval=never --app "dotnet run --project cdk/src/BookInventoryApiStack/BookInventoryApiStack.csproj"
+dotnet build BobsBooks.sln
+aws cloudformation describe-stacks --stack-name CDKToolkit >/dev/null 2>&1 || npx -y aws-cdk@2 bootstrap
+./scripts/enable-transaction-search.sh
+npx -y aws-cdk@2 deploy --all --require-approval never --outputs-file cdk-outputs.json
+./scripts/seed-books.sh
+
+export AGENTCORE_GATEWAY_URL="$(node -e 'const o=require("./cdk-outputs.json"); const s=Object.values(o).find(x=>x.GatewayUrl); process.stdout.write(s.GatewayUrl)')"
+export AGENTCORE_RUNTIME_ARN="$(node -e 'const o=require("./cdk-outputs.json"); const s=Object.values(o).find(x=>x.RuntimeArn); process.stdout.write(s.RuntimeArn)')"
+export BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-4-6
+
+dotnet run --project src/BobsBooks.GatewayProbe/BobsBooks.GatewayProbe.csproj
+dotnet test tests/BobsBooks.Agent.Tests/BobsBooks.Agent.Tests.csproj
+dotnet run --project src/BobsBooks.Console/BobsBooks.Console.csproj -- "Do you have any hardcover mysteries?"
 ```
 
-## How to test
+The bootstrap line runs `cdk bootstrap` only when the account and Region have no `CDKToolkit` stack, so an existing, shared bootstrap stack is left unchanged. `scripts/enable-transaction-search.sh` is a one-time, account-wide setup: it enables CloudWatch Transaction Search so X-Ray accepts the Runtime's OpenTelemetry spans, and it does nothing if Transaction Search is already enabled.
 
-Follow the steps given below to test BookStore application:
+The Gateway probe performs a SigV4-signed MCP `tools/list` request without invoking a model. The agent test runs the agent locally against the real model, Gateway, and API; it skips cleanly when `AGENTCORE_GATEWAY_URL` is absent. The console calls the agent deployed on AgentCore Runtime when `AGENTCORE_RUNTIME_ARN` is set, and runs the agent in-process otherwise.
 
-1. Setup user in cognito
-   * Create new user 
-   ```
-   aws cognito-idp admin-create-user --user-pool-id <USER_POOL_ID> --username john@example.com --user-attributes Name="given_name",Value="john" Name="family_name",Value="smith"
-   ```
-   * Setup password to the user
-   ```
-   aws cognito-idp admin-set-user-password --user-pool-id <USER_POOL_ID> --username john@example.com --password "<PASSWORD>" --permanent
-   ```
-   * Assign role to the user in Cognito
-     * Login to aws console. Select Cognito Service and select the user pool
-     * Select the user created under the user pool
-     * Go to "Group memberships". Add/Remove to the group
-   * Get Access token (Api Gateway sends access token to Lambda authorizer that internally uses AVP for authorization)
-   ```
-   aws cognito-idp admin-initiate-auth --cli-input-json file://auth.json
-   ```
-   **auth.json**
-   ```json
-   {
-       "UserPoolId": "<USER_POOl_ID>",
-       "ClientId": "<CLIENT_ID>",
-       "AuthFlow": "ADMIN_NO_SRP_AUTH",
-       "AuthParameters": {
-           "USERNAME": "john@example.com",
-           "PASSWORD": "<PASSWORD>"
-       }
-   }
-   ```
-2. Use API Test tools such as postman to test Book Inventory. Take Book Inventory API Url from CloudFormation output  
-   **Add Book**
-   * It is POST method, 
-   * "Customer" is allowed to access
-   * Requires Authorization header with Access token (No need of Bearer keyword for token)
-   ````
-   POST https://{{api_gateway_url}}/books
-   ````   
-   * Request body
-   ````
-   {
-    "name": "2020: The Apocalypse",
-    "author": "Li Juan",
-    "bookType": "Hardcover",
-    "condition": "Like New",
-    "genre": "Mystery, Thriller & Suspense",
-    "publisher": "Astral Publishing",
-    "year": 2024,
-    "isbn": "6556784356",
-    "summary": "Bobs used book serverless",
-    "price": 5,
-    "quantity": 10
-    }
-   ````
-   
-   **Update Book**
-   * It is PUT method
-   * "Customer" and "Admin" roles are allowed to access
-   * Requires Authorization header with Access token (No need of Bearer keyword for token)
-   ````
-   PUT https://{{api_gateway_url}}/books/{id}
-   ````   
-   * Request body
-   ````
-   {
-    "bookId": "8274dcb1-e651-41b4-98c6-d416e8b59fab",
-    "name": "2020: The Apocalypse",
-    "author": "Li Juan",
-    "bookType": "Hardcover",
-    "condition": "Like New",
-    "genre": "Mystery, Thriller & Suspense",
-    "publisher": "Astral Publishing",
-    "year": 2024,
-    "isbn": "6556784356",
-    "summary": "Bobs used book serverless",
-    "price": 5,
-    "quantity": 10
-    }
-   ````
-   
-   **Search Book**
-   * Replace book uid in the url. Authorization header is optional as this endpoint allows no specific role required
-     ````
-     GET https://{{api_gateway_url}}/books/{id}
-     ````
-   
-   **List Books**
-   * Authorization header is optional as this endpoint allows no specific role required
-     ````
-     GET https://{{api_gateway_url}}/books?pageSize=2&cursor=null 
-     ````
-   * Set pageSize for the response. If the data in the response exceeds pageSize, response will provide cursor for next call. Use the cursor value in the next call to query next page
-   * Set cursor = null to get the first page; Use the token from the response for next pages
-   * If the response has cursor = "", then the search reached end of all the pages
-   
+Agent spans appear within about 10 minutes in the CloudWatch console under **GenAI Observability** > **Bedrock AgentCore**, and in the `aws/spans` log group with service name `bobs_books_agent.DEFAULT`.
 
-   **Pre-signed url to upload cover page image to S3 bucket**
-   * Add Book id and file name to upload
-   * "Customer" role is allowed to access
-   * Requires Authorization header with Access token (No need of Bearer keyword for token)
-   ````
-   GET https://{{api_gateway_url}}/books/{id}/{fileName}
-   ````
-   
-3. Upload .png/.jpg image to S3 using pre-signed url. After validation, it will be moved to published image bucket. It can be accessed through cloudFront
-   
-## Deleting the resources
+## Cleanup
 
-When you have completed working with the sample applications, we recommend deleting the resources to avoid possible charges. To do this, either:
-
-* In a terminal window navigate to the solution folder and run the command
+```bash
+export AWS_REGION=us-east-1
+./scripts/destroy.sh
 ```
-cdk destroy BookInventoryServiceStack --require-approval=never --app "dotnet run --project cdk/src/BookInventoryApiStack/BookInventoryApiStack.csproj"
-```
-```
-cdk destroy AuthenticationStack --require-approval=never --app "dotnet run --project cdk/src/AuthenticationStack/AuthenticationStack.csproj"
-```
-or
-* Navigate to the CloudFormation dashboard in the AWS Management Console and delete all Bob's Used BookStore Serverless stacks.
 
-## License
+This destroys the four stacks and then permanently deletes the retained `BookInventory` table and the versioned cover-page bucket (every object version). Run `./scripts/destroy.sh --keep-data` to keep them. It also removes what AWS services create on the sample's behalf: the API Gateway execution log group and the account's API Gateway CloudWatch role setting when it still points at this sample's deleted role. If `scripts/enable-transaction-search.sh` enabled CloudWatch Transaction Search, destroy disables it again and deletes the `aws/spans` and `/aws/application-signals/data` log groups; a Transaction Search setup that already existed is left unchanged. The shared CDK bootstrap stack (`CDKToolkit`), and the asset images and files CDK uploaded to it, are not deleted.
 
-This library is licensed under the MIT-0 License. See the LICENSE file.
+## Cost
 
+This sample uses pay-per-use services, including Amazon Bedrock model inference, AgentCore Runtime and Gateway, Lambda, API Gateway, DynamoDB, and observability ingestion. Charges accrue only for usage and retained storage, but retained resources can continue to incur storage charges after stack deletion.
+
+## Security
+
+The two read routes require AWS IAM authorization. Gateway can invoke only those GET routes, the API resource policy restricts calls to the AgentCore service from the deploying account and this sample's Gateway name prefix, and the Runtime role is scoped to its image, its own log groups, model, Gateway, traces, and AgentCore metric namespace. Keep prompt and tool-result telemetry disabled unless your data-handling review permits it.
+
+## Upstream
+
+Forked from [aws-samples/bobs-used-bookstore-serverless](https://github.com/aws-samples/bobs-used-bookstore-serverless) at commit `60705cc29dd8c4721a33348d047331fc8f38fb9a` under MIT-0. See `NOTICE` for the modification list. The upstream `LICENSE`, `CODE_OF_CONDUCT.md`, and `CONTRIBUTING.md` are retained.

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.BedrockAgentCore" />
+    <PackageReference Include="AWSSDK.Extensions.Bedrock.MEAI" />
+    <PackageReference Include="Microsoft.Agents.AI" />
+    <PackageReference Include="ModelContextProtocol" />
+    <ProjectReference Include="../BobsBooks.Shared/BobsBooks.Shared.csproj" />
+  </ItemGroup>
+</Project>
