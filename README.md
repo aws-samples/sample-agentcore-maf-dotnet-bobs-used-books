@@ -90,7 +90,7 @@ This sample uses pay-per-use services, including Amazon Bedrock model inference,
 
 ## Security
 
-The two read routes require AWS IAM authorization. Gateway can invoke only those GET routes, the API resource policy restricts calls to the AgentCore service from the deploying account and this sample's Gateway name prefix, and the Runtime role is scoped to its image, its own log groups, model, Gateway, traces, and AgentCore metric namespace. Chat history comes from the client, so the agent accepts only `user` and `assistant` text turns and rejects a request that contains any other role, such as `system` or `tool`; the model's instructions come only from the agent. Keep prompt and tool-result telemetry disabled unless your data-handling review permits it.
+The two read routes require AWS IAM authorization. Gateway can invoke only those GET routes, the API resource policy restricts calls to the AgentCore service from the deploying account and this sample's Gateway name prefix, and the Runtime role is scoped to its image, its own log groups, model, Gateway, traces, and AgentCore metric namespace. Chat history comes from the client, so the agent accepts only `user` and `assistant` text turns and rejects a request that contains any other role, such as `system` or `tool`; the model's instructions come only from the agent. To help you learn, the agent sets `EnableSensitiveTelemetryData = true` in `src/BobsBooks.Agent/Startup.cs`, so its traces in CloudWatch show prompts, model answers, and tool inputs and results, including the whole conversation in chat mode. Set it to `false` before you use the agent with real or sensitive data, unless your data-handling review permits recording it.
 
 ## Upstream
 
