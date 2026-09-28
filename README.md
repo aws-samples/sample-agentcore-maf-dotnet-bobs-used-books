@@ -55,9 +55,25 @@ dotnet run --project src/BobsBooks.Console/BobsBooks.Console.csproj -- "Do you h
 
 The bootstrap line runs `cdk bootstrap` only when the account and Region have no `CDKToolkit` stack, so an existing, shared bootstrap stack is left unchanged. `scripts/enable-transaction-search.sh` is a one-time, account-wide setup: it enables CloudWatch Transaction Search so X-Ray accepts the Runtime's OpenTelemetry spans, and it does nothing if Transaction Search is already enabled.
 
-The Gateway probe performs a SigV4-signed MCP `tools/list` request without invoking a model. The agent test runs the agent locally against the real model, Gateway, and API; it skips cleanly when `AGENTCORE_GATEWAY_URL` is absent. The console calls the agent deployed on AgentCore Runtime when `AGENTCORE_RUNTIME_ARN` is set, and runs the agent in-process otherwise.
+The Gateway probe performs a SigV4-signed MCP `tools/list` request without invoking a model. The agent test project checks one-shot and chat requests offline against a stub model, and its live test runs the agent locally against the real model, Gateway, and API; the live test skips cleanly when `AGENTCORE_GATEWAY_URL` is absent. The console calls the agent deployed on AgentCore Runtime when `AGENTCORE_RUNTIME_ARN` is set, and runs the agent in-process otherwise.
 
 Agent spans appear within about 10 minutes in the CloudWatch console under **GenAI Observability** > **Bedrock AgentCore**, and in the `aws/spans` log group with service name `bobs_books_agent.DEFAULT`.
+
+## Chat mode
+
+To ask follow-up questions, start the console with `--chat` in the same shell after the quickstart:
+
+```bash
+dotnet run --project src/BobsBooks.Console/BobsBooks.Console.csproj -- --chat
+```
+
+Type a question at the `>` prompt. To quit, type `/exit` or press Ctrl+D. The console keeps the conversation's user and assistant text in memory only, sends it with each new prompt, and discards it when it exits. The agent stores nothing between invocations. A follow-up request looks like this:
+
+```json
+{"prompt":"Which of those is cheaper?","history":[{"role":"user","text":"Do you have any hardcover mysteries?"},{"role":"assistant","text":"Yes: The Locked Room Ledger and Midnight at Ashcroft."}]}
+```
+
+A one-shot run still sends only `{"prompt":"..."}`. With `AGENTCORE_RUNTIME_ARN` set, every turn of a chat uses the same Runtime session ID. Each prompt resends the whole conversation, so long chats use more model input tokens.
 
 ## Cleanup
 
@@ -74,7 +90,7 @@ This sample uses pay-per-use services, including Amazon Bedrock model inference,
 
 ## Security
 
-The two read routes require AWS IAM authorization. Gateway can invoke only those GET routes, the API resource policy restricts calls to the AgentCore service from the deploying account and this sample's Gateway name prefix, and the Runtime role is scoped to its image, its own log groups, model, Gateway, traces, and AgentCore metric namespace. Keep prompt and tool-result telemetry disabled unless your data-handling review permits it.
+The two read routes require AWS IAM authorization. Gateway can invoke only those GET routes, the API resource policy restricts calls to the AgentCore service from the deploying account and this sample's Gateway name prefix, and the Runtime role is scoped to its image, its own log groups, model, Gateway, traces, and AgentCore metric namespace. Chat history comes from the client, so the agent accepts only `user` and `assistant` text turns and rejects a request that contains any other role, such as `system` or `tool`; the model's instructions come only from the agent. Keep prompt and tool-result telemetry disabled unless your data-handling review permits it.
 
 ## Upstream
 

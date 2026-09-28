@@ -4,6 +4,7 @@ using Amazon;
 using Amazon.BedrockAgentCore;
 using Amazon.BedrockAgentCore.Model;
 using Amazon.BedrockRuntime;
+using BobsBooksConsole;
 using BobsBooksShared;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
@@ -12,7 +13,9 @@ const string instructions =
     "You are the Bob's Used Books assistant. Use the inventory tools and report only " +
     "titles, prices, quantities, and availability returned by those tools.";
 
-// Prompts come from the command line; with no arguments the console runs the sample prompts.
+// "--chat" starts an interactive chat. Otherwise prompts come from the command line; with no
+// arguments the console runs the sample prompts.
+var chat = args is ["--chat"];
 string[] prompts = args.Length > 0
     ?
     [
@@ -35,11 +38,23 @@ var runtimeArn = Environment.GetEnvironmentVariable("AGENTCORE_RUNTIME_ARN");
 if (!string.IsNullOrWhiteSpace(runtimeArn))
 {
     using var agentCore = new AmazonBedrockAgentCoreClient(RegionEndpoint.GetBySystemName(region));
+    if (chat)
+    {
+        // One Runtime session for the whole chat; the history itself travels in every payload.
+        var chatSessionId = Guid.NewGuid().ToString();
+        Console.WriteLine($"RUNTIME_INVOKE arn={runtimeArn}");
+        await ChatLoop.RunAsync(
+            Console.In,
+            Console.Out,
+            (prompt, history) => InvokeRuntimeAsync(agentCore, runtimeArn, chatSessionId, prompt, history));
+        return;
+    }
+
     foreach (var prompt in prompts)
     {
         Console.WriteLine($"PROMPT {prompt}");
         Console.WriteLine($"RUNTIME_INVOKE arn={runtimeArn}");
-        var answer = await InvokeRuntimeAsync(agentCore, runtimeArn, prompt);
+        var answer = await InvokeRuntimeAsync(agentCore, runtimeArn, Guid.NewGuid().ToString(), prompt, []);
         Console.WriteLine($"FINAL_ANSWER {answer}");
         Console.WriteLine();
     }
@@ -65,31 +80,48 @@ var agent = innerAgent.AsBuilder()
     .Use(ToolLoggingMiddleware.Log)
     .Build();
 
+if (chat)
+{
+    await ChatLoop.RunAsync(Console.In, Console.Out, AskAsync);
+    return;
+}
+
 foreach (var prompt in prompts)
 {
     Console.WriteLine($"PROMPT {prompt}");
+    var response = await AskAsync(prompt, []);
+    Console.WriteLine($"FINAL_ANSWER {response}");
+    Console.WriteLine();
+}
+
+// Each prompt runs in a fresh session, with any earlier chat turns replayed before it.
+async Task<string> AskAsync(string prompt, IReadOnlyList<ChatTurn> history)
+{
     var session = await agent.CreateSessionAsync();
     var runOptions = new ChatClientAgentRunOptions(
         new ChatOptions { Tools = [.. tools] });
-    var response = await agent.RunAsync(prompt, session, runOptions);
-    Console.WriteLine($"FINAL_ANSWER {response}");
-    Console.WriteLine();
+    var response = await agent.RunAsync(ChatTurn.ToMessages(history, prompt), session, runOptions);
+    return response.Text;
 }
 
 static async Task<string> InvokeRuntimeAsync(
     IAmazonBedrockAgentCore client,
     string runtimeArn,
-    string prompt)
+    string sessionId,
+    string prompt,
+    IReadOnlyList<ChatTurn> history)
 {
+    // A one-shot prompt sends only {"prompt":...}; a chat prompt also sends the earlier turns.
+    object payload = history.Count == 0 ? new { prompt } : new { prompt, history };
     var request = new InvokeAgentRuntimeRequest
     {
         AgentRuntimeArn = runtimeArn,
-        // Runtime session IDs must be at least 33 characters.
-        RuntimeSessionId = Guid.NewGuid().ToString(),
+        // Runtime session IDs must be at least 33 characters; a GUID string has 36.
+        RuntimeSessionId = sessionId,
         ContentType = "application/json",
         Accept = "application/json",
         Payload = new MemoryStream(
-            Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { prompt })))
+            Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload, JsonSerializerOptions.Web)))
     };
 
     using var response = await client.InvokeAgentRuntimeAsync(request);

@@ -16,6 +16,9 @@ public sealed class Agent(AIAgent agent, GatewayToolCatalog catalog)
         AgentCoreRuntimeContext context,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Validate the client's chat history before any Gateway or model call.
+        var messages = request.ToMessages();
+
         var previousSessionId = Baggage.GetBaggage("session.id");
         Baggage.SetBaggage("session.id", context.SessionId);
         Activity.Current?.SetTag("session.id", context.SessionId);
@@ -32,7 +35,7 @@ public sealed class Agent(AIAgent agent, GatewayToolCatalog catalog)
                 new ChatOptions { Tools = [.. tools] });
 
             await foreach (var update in agent.RunStreamingAsync(
-                request.Prompt ?? "Hello!",
+                messages,
                 session,
                 runOptions,
                 cancellationToken))

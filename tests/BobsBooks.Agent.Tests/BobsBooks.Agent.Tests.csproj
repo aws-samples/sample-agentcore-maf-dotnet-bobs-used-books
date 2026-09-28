@@ -14,4 +14,8 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/BobsBooks.Agent/BobsBooks.Agent.csproj" />
+    <ProjectReference Include="../../src/BobsBooks.Console/BobsBooks.Console.csproj" />
+  </ItemGroup>
 </Project>
