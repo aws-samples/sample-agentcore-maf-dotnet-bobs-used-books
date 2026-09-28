@@ -34,16 +34,13 @@ public sealed class Agent(AIAgent agent, GatewayToolCatalog catalog)
             var runOptions = new ChatClientAgentRunOptions(
                 new ChatOptions { Tools = [.. tools] });
 
-            await foreach (var update in agent.RunStreamingAsync(
+            await foreach (var text in AnswerText(agent.RunStreamingAsync(
                 messages,
                 session,
                 runOptions,
-                cancellationToken))
+                cancellationToken)))
             {
-                if (!string.IsNullOrEmpty(update.Text))
-                {
-                    yield return update.Text;
-                }
+                yield return text;
             }
         }
         finally
@@ -56,6 +53,38 @@ public sealed class Agent(AIAgent agent, GatewayToolCatalog catalog)
             {
                 Baggage.SetBaggage("session.id", previousSessionId);
             }
+        }
+    }
+
+    // Streams the answer text. When a question needs a tool, the model answers in two
+    // messages: a short one with the tool call, then the answer once the tool result is
+    // back. The answer starts on a new line so the two don't run together
+    // ("...for you!Great news...").
+    public static async IAsyncEnumerable<string> AnswerText(
+        IAsyncEnumerable<AgentResponseUpdate> updates)
+    {
+        var lastText = string.Empty;
+        var afterToolResult = false;
+        await foreach (var update in updates)
+        {
+            if (update.Contents.Any(content => content is FunctionResultContent))
+            {
+                afterToolResult = true;
+            }
+
+            if (string.IsNullOrEmpty(update.Text))
+            {
+                continue;
+            }
+
+            if (afterToolResult && lastText.Length > 0 && !lastText.EndsWith('\n'))
+            {
+                yield return "\n";
+            }
+
+            afterToolResult = false;
+            lastText = update.Text;
+            yield return update.Text;
         }
     }
 

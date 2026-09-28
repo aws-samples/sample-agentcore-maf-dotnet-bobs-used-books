@@ -130,12 +130,10 @@ public sealed class ChatHistoryTests
         var runOptions = new ChatClientAgentRunOptions(new ChatOptions { Tools = [] });
 
         var chunks = new List<string>();
-        await foreach (var update in agent.RunStreamingAsync(request.ToMessages(), session, runOptions))
+        await foreach (var text in Agent.AnswerText(
+            agent.RunStreamingAsync(request.ToMessages(), session, runOptions)))
         {
-            if (!string.IsNullOrEmpty(update.Text))
-            {
-                chunks.Add(update.Text);
-            }
+            chunks.Add(text);
         }
 
         return (model, chunks);
