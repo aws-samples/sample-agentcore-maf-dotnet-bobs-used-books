@@ -2,7 +2,9 @@ using Amazon;
 using Amazon.Runtime;
 using ModelContextProtocol.Client;
 
-#pragma warning disable CS0618 // The evidence brief explicitly requires FallbackCredentialsFactory.
+// FallbackCredentialsFactory is deprecated in AWSSDK.Core 4, but it still resolves the
+// default AWS credential chain that SigV4Handler uses to sign requests.
+#pragma warning disable CS0618
 
 namespace BobsBooksShared;
 
