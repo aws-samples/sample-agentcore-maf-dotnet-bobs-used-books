@@ -95,3 +95,7 @@ The two read routes require AWS IAM authorization. Gateway can invoke only those
 ## Upstream
 
 Forked from [aws-samples/bobs-used-bookstore-serverless](https://github.com/aws-samples/bobs-used-bookstore-serverless) at commit `60705cc29dd8c4721a33348d047331fc8f38fb9a` under MIT-0. See `NOTICE` for the modification list. The upstream `LICENSE`, `CODE_OF_CONDUCT.md`, and `CONTRIBUTING.md` are retained.
+
+## License
+
+This library is licensed under the MIT-0 License. See the LICENSE file.
